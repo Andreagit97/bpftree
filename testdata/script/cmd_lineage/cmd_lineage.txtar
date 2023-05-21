@@ -1,0 +1,49 @@
+# Get tid 1 lineage
+exec bpftree l t 1
+cmp stdout info/systemd.txt
+
+# Get tid 1 lineage without pretty print
+exec bpftree l t 1 -n
+cmp stdout info/systemd_no_pretty.txt
+
+# Get systemd throught prefix
+exec bpftree l c systemd
+stdout '📜 Task Lineage for comm: systemd'
+
+# Get systemd throught prefix without pretty print
+exec bpftree l c systemd -n
+stdout '- Task Lineage for comm: systemd'
+
+# Get tid 1 lineage with custom format
+exec bpftree l t 1 -f 'tid,pid,reaper,rpt,c'
+cmp stdout info/custom_format.txt
+
+# Get tid 1 lineage with custom format without pretty print
+exec bpftree l t 1 -f 'tid,pid,reaper,rpt,c' -n
+cmp stdout info/custom_format_no_pretty.txt
+
+# Get unexistent tid '9999999999999'
+! exec bpftree l t 9999999999999 -f 'tid,pid,reaper,rpt,c' -n
+stdout 'X There are no tasks with tid equals to ''9999999999999'' in the system'
+
+# Get unexistent prefix 'ccsdnsndsn'
+! exec bpftree l c ccsdnsnds -f 'tid,pid,reaper,rpt,c'
+stdout '🔴 There are no tasks with comm equals to ''ccsdnsnds'' in the system'
+
+-- info/systemd.txt --
+📜 Task Lineage for tid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+-- info/systemd_no_pretty.txt --
+- Task Lineage for tid: 1
+V [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+-- info/custom_format.txt --
+📜 Task Lineage for tid: 1
+⬇️ [systemd] t: 1, p: 1, r: false, rpt: 0, c: systemd
+
+-- info/custom_format_no_pretty.txt --
+- Task Lineage for tid: 1
+V [systemd] t: 1, p: 1, r: false, rpt: 0, c: systemd
+
+-- end --

@@ -1,0 +1,20 @@
+## Supported fields
+
+| Fields      | Description                                                         |
+| ----------- | ------------------------------------------------------------------- |
+| tid,t       | thread id (tid) of the current task (init namespace)                |
+| vtid,vt     | thread id (tid) of the current task (task namespace)                |
+| pid,p       | process id (pid) of the current task (init namespace)               |
+| vpid,vp     | process id (pid) of the current task (task namespace)               |
+| pgid,pg     | process group id (pgid) of the current task (init namespace)        |
+| vpgid,vpg   | process group id (pgid) of the current task (task namespace)        |
+| sid,s       | session id (sid) of the current task (init namespace)               |
+| vsid,vs     | session id (sid) of the current task (task namespace)               |
+| ptid,pt     | parent thread id (ptid) of the current task (init namespace)        |
+| ppid,pp     | parent process id (ppid) of the current task (init namespace)       |
+| rptid,rpt   | real parent thread id (rptid) of the current task (init namespace)  |
+| rppid,rpp   | real parent process id (rppid) of the current task (init namespace) |
+| comm,c      | human readeable process name ('task->comm')                         |
+| reaper,r    | true if the current process is a child_sub_reaper                   |
+| ns_level,ns | pid namespace level of the actual thread                            |
+| exepath,e   | full executable path of the current task                            |

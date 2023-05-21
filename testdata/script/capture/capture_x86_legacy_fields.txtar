@@ -1,0 +1,83 @@
+# Get Lineage for task 8963
+exec bpftree l tid 8963 -c ../../capture_files/capture_x86_legacy_fields.tree
+cmp stdout lineage_8963.txt
+
+# Get Lineage for all containerd tasks
+exec bpftree l comm containerd -c ../../capture_files/capture_x86_legacy_fields.tree
+cmp stdout containerd.txt
+
+# Get Tree for task 8501
+exec bpftree t tid 8501 -c ../../capture_files/capture_x86_legacy_fields.tree
+cmp stdout tree_8501.txt
+
+-- lineage_8963.txt --
+📜 Task Lineage for tid: 8963
+⬇️ {gopls} tid: 8963, pid: 8318, rptid: 8147, rppid: 8147
+⬇️ [code] tid: 8147, pid: 8147, rptid: 7979, rppid: 7953
+⬇️ {ThreadPoolSingl} tid: 7979, pid: 7953, rptid: 1262, rppid: 1262
+⬇️ [systemd]💀 tid: 1262, pid: 1262, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+-- containerd.txt --
+📜 Task Lineage for comm: containerd
+⬇️ [containerd] tid: 936, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+⬇️ {containerd} tid: 957, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+⬇️ {containerd} tid: 958, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+⬇️ {containerd} tid: 959, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+⬇️ {containerd} tid: 960, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+⬇️ {containerd} tid: 961, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+⬇️ {containerd} tid: 995, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+⬇️ {containerd} tid: 996, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+⬇️ {containerd} tid: 998, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+⬇️ {containerd} tid: 999, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+⬇️ {containerd} tid: 2702, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+⬇️ {containerd} tid: 2703, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+⬇️ {containerd} tid: 3015, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+⬇️ {containerd} tid: 9042, pid: 936, rptid: 1, rppid: 1
+⬇️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
+
+-- tree_8501.txt --
+🌴 Task Tree for tid: 8501
+[code] tid: 8501, pid: 8501
+└─ [zsh] tid: 8562, pid: 8562
+   └─ [sudo] tid: 23745, pid: 23745
+      └─ [sudo] tid: 23746, pid: 23746
+         ├─ [bpftree] tid: 23747, pid: 23747
+         ├─ {bpftree} tid: 23748, pid: 23747
+         ├─ {bpftree} tid: 23749, pid: 23747
+         ├─ {bpftree} tid: 23750, pid: 23747
+         ├─ {bpftree} tid: 23751, pid: 23747
+         ├─ {bpftree} tid: 23752, pid: 23747
+         ├─ {bpftree} tid: 23753, pid: 23747
+         ├─ {bpftree} tid: 23754, pid: 23747
+         ├─ {bpftree} tid: 23755, pid: 23747
+         ├─ {bpftree} tid: 23756, pid: 23747
+         └─ {bpftree} tid: 23757, pid: 23747
+
+-- end --
