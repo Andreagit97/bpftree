@@ -30,6 +30,8 @@ struct exported_task_info
 	int32_t sid;
 	int32_t vsid;
 	char exe_path[EXE_PATH_MAX_LEN];
+	int64_t loginuid;
+	int64_t euid;
 } typedef exported_task_info;
 
 /* If necessary we could expand this header */
@@ -49,6 +51,8 @@ header h;
 
 /* Keep the number of task struct visited */
 uint64_t counter = 0;
+
+#define UINT32_MAX (4294967295U)
 
 /* used to check the endianness */
 const uint16_t magic = 0xeB9F;
@@ -173,6 +177,30 @@ int dump_task(struct bpf_iter__task *ctx)
 	else
 	{
 		data.exe_path[0] = '\0';
+	}
+
+	/* `loginuid` is an uint32_t but we use 64 bit in this way we can provide the user with a
+	 * user-friendly info:
+	 * - we return `-1` when loginuid is `UINT32_MAX`.
+	 * - we return `-2` when for some reason we are not able to extract this info from the
+	 * 	kernel. for example on COS the extraction path is different, or maybe the kernel is
+	 * 	compiled without the `CONFIG_AUDIT` config.
+	 */
+	data.loginuid = -2;
+	if(bpf_core_field_exists(task->loginuid))
+	{
+		data.loginuid = (s64)task->loginuid.val;
+		if(data.loginuid == UINT32_MAX)
+		{
+			data.loginuid = -1;
+		}
+	}
+
+	data.euid = task->cred->euid.val;
+	if(data.euid == UINT32_MAX)
+	{
+		/* Like loginuid `-1` here is user friendly */
+		data.euid = -1;
 	}
 
 	bpf_seq_write(seq, &data, sizeof(data));
