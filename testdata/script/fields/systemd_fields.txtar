@@ -1,9 +1,9 @@
 # fields full name
-exec bpftree i t 1 -f 'tid,pid,ptid,ppid,rptid,rppid,comm,reaper,ns_level,vtid,vpid,pgid,vpgid,sid,vsid,exepath'
+exec bpftree i t 1 -f 'tid,pid,ptid,ppid,rptid,rppid,comm,reaper,ns_level,vtid,vpid,pgid,vpgid,sid,vsid,exepath,loginuid,euid'
 cmp stdout fields/names.txt
 
 # fields short name
-exec bpftree i t 1 -f 't,p,pt,pp,rpt,rpp,c,r,ns,vt,vp,pg,vpg,s,vs,e'
+exec bpftree i t 1 -f 't,p,pt,pp,rpt,rpp,c,r,ns,vt,vp,pg,vpg,s,vs,e,lu,eu'
 cmp stdout fields/names.txt
 
 # Use unexistent format 'tid,pid,reaper, rpt,c'
@@ -16,4 +16,4 @@ stdout '🔴 field ''NOOO'' is not allowed'
 
 -- fields/names.txt --
 ℹ️ Task Info for tid: 1
-🗞️ [systemd] t: 1, p: 1, pt: 0, pp: 0, rpt: 0, rpp: 0, c: systemd, r: false, ns: 0, vt: 1, vp: 1, pg: 1, vpg: 1, s: 1, vs: 1, e: /usr/lib/systemd/systemd
+🗞️ [systemd] t: 1, p: 1, pt: 0, pp: 0, rpt: 0, rpp: 0, c: systemd, r: false, ns: 0, vt: 1, vp: 1, pg: 1, vpg: 1, s: 1, vs: 1, e: /usr/lib/systemd/systemd, lu: -1(), eu: 0(root)

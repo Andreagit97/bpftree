@@ -37,6 +37,8 @@ type TaskInfo struct {
 	Sid              int32
 	VSid             int32
 	ExePath          [exePathLen]byte
+	LoginUID         int64
+	EUID             int64
 }
 
 func obtainTaskInfoField(reader io.ReadCloser, fieldSize uint32, data any) error {
@@ -143,6 +145,16 @@ func parseTaskInfo(reader io.ReadCloser) (TaskInfo, error) {
 
 	/* ExePath */
 	if err := obtainTaskInfoField(reader, exePathLen, &t.ExePath); err != nil {
+		return t, err
+	}
+
+	/* loginuid */
+	if err := obtainTaskInfoField(reader, 8, &t.LoginUID); err != nil {
+		return t, err
+	}
+
+	/* euid */
+	if err := obtainTaskInfoField(reader, 8, &t.EUID); err != nil {
 		return t, err
 	}
 

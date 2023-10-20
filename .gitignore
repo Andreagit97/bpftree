@@ -27,3 +27,5 @@ dist/
 testdata/output/script*
 temp.*
 pkg/task/iter_bpf*
+# dumped files
+*.tree

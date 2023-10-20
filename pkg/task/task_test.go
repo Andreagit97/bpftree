@@ -261,6 +261,18 @@ func TestGetFieldMatrix(t *testing.T) {
 			}},
 			"containerd",
 			func(t task) string { return t.getExePath() }},
+		{"GetLoginUid",
+			task{Info: TaskInfo{
+				LoginUID: -2,
+			}},
+			"-2",
+			func(t task) string { return fmt.Sprint(t.getLoginUID()) }},
+		{"GetEUid",
+			task{Info: TaskInfo{
+				EUID: -1,
+			}},
+			"-1",
+			func(t task) string { return fmt.Sprint(t.getEUID()) }},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

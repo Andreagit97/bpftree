@@ -43,6 +43,8 @@ const (
 	reaperField
 	nsLevelField
 	exePathField
+	loginUIDField
+	eUIDField
 	maxField
 )
 
@@ -220,6 +222,28 @@ var allowedFieldsSlice = [maxField]fieldInfo{
 		},
 		stringField: func(t *task) string {
 			return t.getExePath()
+		},
+	},
+
+	loginUIDField: {
+		allowedNames: []string{"loginuid", "lu"},
+		description:  "UID of the user that interacted with a login service",
+		displayField: func(t *task) string {
+			return fmt.Sprintf("lu: %d(%s), ", t.getLoginUID(), t.getLoginUIDName())
+		},
+		stringField: func(t *task) string {
+			return fmt.Sprintf("%d", t.getLoginUID())
+		},
+	},
+
+	eUIDField: {
+		allowedNames: []string{"euid", "eu"},
+		description:  "Effective UID",
+		displayField: func(t *task) string {
+			return fmt.Sprintf("eu: %d(%s), ", t.getEUID(), t.getEUIDName())
+		},
+		stringField: func(t *task) string {
+			return fmt.Sprintf("%d", t.getEUID())
 		},
 	},
 }

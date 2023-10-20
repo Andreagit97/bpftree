@@ -2,6 +2,12 @@ package task
 
 import (
 	"bytes"
+	"fmt"
+	"os/user"
+)
+
+var (
+	userList map[string]string
 )
 
 type task struct {
@@ -95,4 +101,57 @@ func (t *task) getExePath() string {
 		return string(t.Info.ExePath[:])
 	}
 	return string(t.Info.ExePath[:index])
+}
+
+func (t *task) getLoginUID() int64 {
+	return t.Info.LoginUID
+}
+
+func (t *task) getEUID() int64 {
+	return t.Info.EUID
+}
+
+func (t *task) getLoginUIDName() string {
+	/* Search the username first in the map and then in the system */
+	if t.Info.LoginUID < 0 {
+		return ""
+	}
+
+	loginUIDString := fmt.Sprintf("%d", t.Info.LoginUID)
+	if username, ok := userList[loginUIDString]; ok {
+		return username
+	}
+
+	u, err := user.LookupId(loginUIDString)
+	if err == nil {
+		userList[loginUIDString] = u.Username
+		return u.Username
+	}
+
+	return ""
+}
+
+func (t *task) getEUIDName() string {
+	/* Search the username first in the map and then in the system */
+	if t.Info.EUID < 0 {
+		return ""
+	}
+
+	eUIDString := fmt.Sprintf("%d", t.Info.EUID)
+
+	if username, ok := userList[eUIDString]; ok {
+		return username
+	}
+
+	u, err := user.LookupId(eUIDString)
+	if err == nil {
+		userList[eUIDString] = u.Username
+		return u.Username
+	}
+
+	return ""
+}
+
+func init() {
+	userList = make(map[string]string)
 }
