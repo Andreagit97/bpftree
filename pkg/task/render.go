@@ -45,6 +45,7 @@ const (
 	exePathField
 	loginUIDField
 	eUIDField
+	cmdLineField
 	maxField
 )
 
@@ -244,6 +245,17 @@ var allowedFieldsSlice = [maxField]fieldInfo{
 		},
 		stringField: func(t *task) string {
 			return fmt.Sprintf("%d", t.getEUID())
+		},
+	},
+
+	cmdLineField: {
+		allowedNames: []string{"cmdline", "cmd"},
+		description:  "command line of the current task",
+		displayField: func(t *task) string {
+			return fmt.Sprintf("cmd: %s, ", t.getCmdLine())
+		},
+		stringField: func(t *task) string {
+			return t.getCmdLine()
 		},
 	},
 }
