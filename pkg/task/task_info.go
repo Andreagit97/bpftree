@@ -16,6 +16,7 @@ var (
 const (
 	commLen    uint32 = 16
 	exePathLen uint32 = 1024
+	cmdLineLen uint32 = 1024
 )
 
 // TaskInfo is the struct sent by BPF side for each task.
@@ -39,6 +40,7 @@ type TaskInfo struct {
 	ExePath          [exePathLen]byte
 	LoginUID         int64
 	EUID             int64
+	CmdLine          [cmdLineLen]byte
 }
 
 func obtainTaskInfoField(reader io.ReadCloser, fieldSize uint32, data any) error {
@@ -155,6 +157,11 @@ func parseTaskInfo(reader io.ReadCloser) (TaskInfo, error) {
 
 	/* euid */
 	if err := obtainTaskInfoField(reader, 8, &t.EUID); err != nil {
+		return t, err
+	}
+
+	/* cmdline */
+	if err := obtainTaskInfoField(reader, cmdLineLen, &t.CmdLine); err != nil {
 		return t, err
 	}
 

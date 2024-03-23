@@ -152,6 +152,17 @@ func (t *task) getEUIDName() string {
 	return ""
 }
 
+// todo!: this is simple scratch implementation it doesn't cover all the cases.
+// Moreover we need to address the `set_proctitle` call in the kernel code.
+func (t *task) getCmdLine() string {
+	// remove all the extra bytes at the end, if we have them
+	fullCmdLine := bytes.Split(t.Info.CmdLine[:], []byte{0, 0})
+	// we obtain a slice of slices with single arguments
+	singleArgs := bytes.Split(fullCmdLine[0], []byte{0})
+	joinedArgs := bytes.Join(singleArgs, []byte(","))
+	return string(joinedArgs)
+}
+
 func init() {
 	userList = make(map[string]string)
 }

@@ -6,8 +6,10 @@
 
 /* Extracted from the kernel */
 #define MAX_PID_NS_LEVEL 32
-
+#define UINT32_MAX (4294967295U)
 #define EXE_PATH_MAX_LEN 1024
+#define CMDLINE_MAX_LEN 1024
+#define SAFE_1024_ACCESS(x) x &(1024 - 1)
 
 char _license[] SEC("license") = "GPL";
 
@@ -32,6 +34,7 @@ struct exported_task_info
 	char exe_path[EXE_PATH_MAX_LEN];
 	int64_t loginuid;
 	int64_t euid;
+	char cmdline[CMDLINE_MAX_LEN];
 } typedef exported_task_info;
 
 /* If necessary we could expand this header */
@@ -52,14 +55,12 @@ header h;
 /* Keep the number of task struct visited */
 uint64_t counter = 0;
 
-#define UINT32_MAX (4294967295U)
-
 /* used to check the endianness */
 const uint16_t magic = 0xeB9F;
 /* Initial version equals to 0 */
 const uint32_t header_version = 0;
 
-SEC("iter/task")
+SEC("iter.s/task")
 int dump_task(struct bpf_iter__task *ctx)
 {
 	struct seq_file *seq = ctx->meta->seq;
@@ -165,18 +166,31 @@ int dump_task(struct bpf_iter__task *ctx)
 			struct file *exe_file = task->mm->exe_file;
 			if(exe_file != NULL)
 			{
-				/* Right now we don't care about the return value */
-				bpf_d_path(&(exe_file->f_path), data.exe_path, EXE_PATH_MAX_LEN);
+				// According to the manual if the path is too long the helper
+				// doesn't populate the path so we return a too-long.
+				if(bpf_d_path(&(exe_file->f_path), data.exe_path,
+					      EXE_PATH_MAX_LEN) < 0)
+				{
+					// The path was too long `TL`
+					data.exe_path[0] = 'T';
+					data.exe_path[1] = 'L';
+					data.exe_path[2] = '\0';
+				}
 			}
 		}
 		else
 		{
-			data.exe_path[0] = '\0';
+			// The path is not available `NA`, we cannot recover it!
+			data.exe_path[0] = 'N';
+			data.exe_path[1] = 'A';
+			data.exe_path[2] = '\0';
 		}
 	}
 	else
 	{
-		data.exe_path[0] = '\0';
+		data.exe_path[0] = 'N';
+		data.exe_path[1] = 'A';
+		data.exe_path[2] = '\0';
 	}
 
 	/* `loginuid` is an uint32_t but we use 64 bit in this way we can provide the user with a
@@ -201,6 +215,23 @@ int dump_task(struct bpf_iter__task *ctx)
 	{
 		/* Like loginuid `-1` here is user friendly */
 		data.euid = -1;
+	}
+
+	// todo!: we need to manage the `set_proctitle` issue
+	unsigned long arg_start_pointer = task->mm->arg_start;
+	unsigned long arg_end_pointer = task->mm->arg_end;
+	const uint16_t cmdline_len = arg_end_pointer - arg_start_pointer >= CMDLINE_MAX_LEN
+					     ? CMDLINE_MAX_LEN - 1
+					     : arg_end_pointer - arg_start_pointer;
+
+	int ret = bpf_copy_from_user_task(&data.cmdline[0], SAFE_1024_ACCESS(cmdline_len),
+					  (void *)arg_start_pointer, task, 0);
+	if(ret != 0)
+	{
+		bpf_printk("[BPFTREE] cmdline read error(%d)!", ret);
+		data.cmdline[0] = 'N';
+		data.cmdline[1] = 'A';
+		data.cmdline[2] = '\0';
 	}
 
 	bpf_seq_write(seq, &data, sizeof(data));

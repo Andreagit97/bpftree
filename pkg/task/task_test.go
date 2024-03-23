@@ -273,6 +273,18 @@ func TestGetFieldMatrix(t *testing.T) {
 			}},
 			"-1",
 			func(t task) string { return fmt.Sprint(t.getEUID()) }},
+		{"GetCmdLine",
+			task{Info: TaskInfo{
+				CmdLine: [exePathLen]byte{'e', 'x', 'e', 0, 'a', 'r', 'g', '1', 0, 'a', 'r', 'g', '2', 0},
+			}},
+			"exe,arg1,arg2",
+			func(t task) string { return t.getCmdLine() }},
+		{"GetCmdLineExtra0",
+			task{Info: TaskInfo{
+				CmdLine: [exePathLen]byte{'e', 'x', 'e', 0, 'a', 'r', 'g', '1', 0, 'a', 'r', 'g', '2', 0, 0, 0},
+			}},
+			"exe,arg1,arg2",
+			func(t task) string { return t.getCmdLine() }},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
