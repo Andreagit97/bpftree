@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"sort"
+	"strconv"
 
 	"github.com/cilium/ebpf"
 	"github.com/cilium/ebpf/features"
@@ -17,6 +18,7 @@ import (
 )
 
 //go:generate go run github.com/cilium/ebpf/cmd/bpf2go iter ./bpf/iter.bpf.c
+//go:generate go run github.com/cilium/ebpf/cmd/bpf2go fileIter ./bpf/file_iter.bpf.c
 
 const (
 	// the magic number is on 2 bytes.
@@ -194,4 +196,116 @@ func PopulateTaskInfo() error {
 	/* Compute children and order them by tid */
 	computeChildren()
 	return nil
+}
+
+// todo!: we need to rewrite this file descriptor collection
+type FileInfo struct {
+	/* These fields are mapped 1:1 to BPF side */
+	Fd   uint32
+	Path [1024]byte
+}
+
+func (f *FileInfo) getPath() string {
+	/* We truncate the exePath after the \0 to avoid printing
+	 * useless end characters
+	 */
+	index := bytes.IndexByte(f.Path[:], byte(0))
+	if index == -1 {
+		/* There is no terminator */
+		return string(f.Path[:])
+	}
+	return string(f.Path[:index])
+}
+
+func (f *FileInfo) print() string {
+	return fmt.Sprintf("(%d): %s", f.Fd, f.getPath())
+}
+
+// todo!: we just read in Little endian!
+func parseFileInfo(reader io.ReadCloser) (FileInfo, error) {
+	var f FileInfo
+
+	/* Fd */
+	if err := decodeByteEndianness(reader, 4, &f.Fd); err != nil {
+		return f, err
+	}
+
+	/* Path */
+	if err := decodeByteEndianness(reader, 1024, &f.Path); err != nil {
+		return f, err
+	}
+
+	return f, nil
+}
+
+func PrintTaskFiles(task string) {
+	thread_id, err := strconv.Atoi(task)
+	if err != nil {
+		displayError("invalid thread id:", err)
+		os.Exit(1)
+	}
+
+	/* Detect necessary BPF features */
+	if err := bpfDetectionFeatures(); err != nil {
+		displayError("cannot detect right features:", err)
+		os.Exit(1)
+	}
+
+	/* Load pre-compiled programs and maps into the kernel. */
+	spec, err := loadFileIter()
+	if err != nil {
+		displayError("cannot load the file iter:", err)
+		os.Exit(1)
+	}
+
+	// we need to rewrite the map
+	err = spec.RewriteConstants(map[string]interface{}{
+		"target_thread_id": int32(thread_id),
+	})
+	if err != nil {
+		displayError("cannot rewrite the map:", err)
+		os.Exit(1)
+	}
+
+	objs := fileIterObjects{}
+	if err := spec.LoadAndAssign(&objs, nil); err != nil {
+		displayError("unable to load BPF iter file objects into the kernel:", err)
+		os.Exit(1)
+	}
+	defer objs.Close()
+
+	opts := link.IterOptions{
+		Program: objs.DumpTaskFile,
+	}
+
+	iter, err := link.AttachIter(opts)
+	if err != nil {
+		displayError("unable to attach Iter file prog:", err)
+		os.Exit(1)
+	}
+
+	reader, err := iter.Open()
+	if err != nil {
+		displayError("unable to open a reader for the iter:", err)
+		os.Exit(1)
+	}
+	defer reader.Close()
+
+	var fdInfoList []FileInfo
+	for {
+		fdInfo, err := parseFileInfo(reader)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			displayError("failed while reading:", err)
+			os.Exit(1)
+		}
+		fdInfoList = append(fdInfoList, fdInfo)
+	}
+
+	displayGraph("Files for thread:", thread_id)
+	for _, f := range fdInfoList {
+		displayGraph(f.print())
+	}
 }

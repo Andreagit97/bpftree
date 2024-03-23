@@ -3,6 +3,8 @@ run:
   skip-files:
    - pkg/task/iter_bpfel.go
    - pkg/task/iter_bpfeb.go
+   - pkg/task/fileiter_bpfel.go
+   - pkg/task/fileiter_bpfeb.go
 
 linters-settings:
   exhaustive:
