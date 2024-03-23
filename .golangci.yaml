@@ -1,125 +1,169 @@
 run:
   timeout: 10m
-  skip-files:
-   - pkg/task/iter_bpfel.go
-   - pkg/task/iter_bpfeb.go
+  modules-download-mode: readonly
+  go: "1.21"
+
+output:
+  formats:
+    - format: colored-line-number
+    - format: junit-xml
+      path: report.xml
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  exclude-use-default: false
 
 linters-settings:
-  exhaustive:
-    check-generated: false
-    default-signifies-exhaustive: true
-
-  lll:
-    line-length: 100
-
-  gci:
-    sections:
-      - standard                          # Captures all standard packages if they do not match another section.
-      - default                           # Contains all imports that could not be matched to another section type.
-      - prefix(github.com/Andreagit97/bpftree)  # Groups all imports with the specified Prefix.
-  goconst:
-    min-len: 2
-    min-occurrences: 2
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      # Conflicts with govet check-shadowing
-      - sloppyReassign
-  goimports:
-    local-prefixes: github.com/Andreagit97/bpftree
+  errcheck:
+    check-type-assertions: false
+    check-blank: false
+    disable-default-exclusions: false
+    exclude-functions:
+    - (*bytes.Buffer).WriteString
+    - (*strings.Builder).WriteByte
+    - (*strings.Builder).WriteRune
+    - (*strings.Builder).WriteString
+    - fmt.Fprint
+    - fmt.Fprintf
+    - fmt.Fprintln
+    - fmt.Print
+    - fmt.Printf
+    - fmt.Println
+  gosec:
+    includes:
+    - G101
+    - G102
+    - G103
+    - G104
+    - G106
+    - G108
+    - G109
+    - G111
+    - G113
+    - G201
+    - G202
+    - G203
+    - G303
+    - G307
+    - G403
+    - G502
+    - G503
+    - G504
+    - G601
+  revive:
+    rules:
+    - name: package-comments
+      disabled: true
+    - name: error-strings
+      disabled: true
+    - name: unexported-return
+      disabled: true
   govet:
-    check-shadowing: true
-  misspell:
-    locale: US
+    enable-all: true
+    disable:
+      - shadow
+      - fieldalignment
+    settings:
+      printf: # analyzer name, run `go tool vet help` to see all analyzers
+        funcs: # run `go tool vet help printf` to see available settings for `printf` analyzer
+          - Print
+          - Printf
+          - Println
+          - Debug
+          - Debugf
+          - Info
+          - Infof
+          - Warn
+          - Warnf
+          - Error
+          - Errorf
+  gocritic:
+    disabled-checks:
+    - appendAssign
+    - argOrder
+    - assignOp
+    - captLocal
+    - dupArg
+    - elseif
+    - exitAfterDefer
+    - ifElseChain
+    - mapKey
+    - singleCaseSwitch
+    - unlambda
+    - wrapperFunc
   nolintlint:
     allow-leading-space: true # don't require machine-readable nolint directives (i.e. with no leading space)
     allow-unused: false # report any unused nolint directives
     require-explanation: true # require an explanation for nolint directives
     require-specific: true # require nolint directives to be specific about which linter is being skipped
-  dupl:
-    threshold: 300
+  forbidigo:
+    # Forbid the following identifiers (list of regexp).
+    forbid:
+    - 'os\.Stdout(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?'
+    - 'os\.Stderr(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?'
+    - 'os\.Stdin(# Disallowed output streams used\. Use environment\.InputOutput\(\).Out instead\.)?'
+  staticcheck:
+    checks: [all,-ST1000,-ST1001,-ST1003,-ST1005,-SA1019,-SA4001,-ST1016]
+  wrapcheck:
+    ignoreSigRegexps:
+      - utils\.Should
+      - errox\..+\.CausedBy(f)?
+      - retry\.MakeRetryable
+      - policy\.NewErr.*
 
 linters:
+  # please, do not use `enable-all`: it's deprecated and will be removed soon.
+  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
   disable-all: true
   enable:
     - asciicheck
-    - bodyclose
+    # - bodyclose
+    # - deadcode
     # - depguard
-    - dogsled
-    - dupl
+    # - dogsled
+    # - dupl
     - errcheck
-    - errorlint
-    - exhaustive
-    - exportloopref
     # - funlen
+    - forbidigo
     # - gochecknoglobals
     # - gochecknoinits
     # - gocognit
-    - gci
-    - goconst
+    # - goconst
+    - exportloopref
     - gocritic
-    - gocyclo
-    - godot
+    # - gocyclo
+    # - godot
     # - godox
     # - goerr113
     - gofmt
-    - goheader
     - goimports
-    - gomodguard
+    - revive # replaces golint
     # - gomnd
-    - goprintffuncname
+    # - goprintffuncname
     - gosec
     - gosimple
     - govet
     - ineffassign
-    - lll
+    # - interfacer
+    # - lll
     # - maligned
-    - misspell
-    - nakedret
+    # - misspell
+    # - nakedret TODO: add in follow-up
     # - nestif
-    - noctx
     - nolintlint
     # - prealloc
-    # - revive
     - rowserrcheck
+    # - scopelint
     - staticcheck
-    - stylecheck
+    # - structcheck
+    # - stylecheck
     # - testpackage
     # - typecheck
-    - unconvert
-    - unparam
-    - unused
-    - whitespace
-  # - wsl
-
-issues:
-  #fix: true
-
-  max-issues-per-linter: 0
-  max-same-issues: 0
-
-  # Disable the default exclude patterns (as they disable the mandatory comments)
-  exclude-use-default: false
-  exclude:
-    # errcheck: Almost all programs ignore errors on these functions and in most cases it's ok
-    - Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*printf?|os\.(Un)?Setenv). is not checked
-
-  exclude-rules:
-    - linters:
-        - govet
-      text: 'declaration of "(err|ctx)" shadows declaration at'
-    - linters:
-        - errorlint
-      # Disable the check to test errors type assertion on switches.
-      text: type switch on error will fail on wrapped errors. Use errors.As to check for specific errors
-
-    # Exclude the following linters from running on tests files.
-    - path: _test\.go
-      linters:
-        - gosec
-        - typecheck
+    # - unconvert TODO: add in follow-up
+    # - unparam TODO: add in follow-up
+    # - unused // enabled in Makefile as it fails with release tag
+    # - varcheck
+    # - whitespace
+    # - wrapcheck
+    # - wsl

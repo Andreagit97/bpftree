@@ -2,32 +2,17 @@ package task
 
 import (
 	"fmt"
-	"os"
+	"strings"
 
-	"github.com/enescakir/emoji"
+	"github.com/Andreagit97/bpftree/pkg/render"
 )
 
-type renderMode uint32
+type allowedField int
 
+// These are task fields, we should have also file fields
 const (
-	undefined renderMode = iota
-	infoMode
-	lineageMode
-	treeMode
-	formatMode
-)
-
-type allowedFields int
-
-type fieldInfo struct {
-	allowedNames []string
-	description  string
-	displayField func(t *task) string
-	stringField  func(t *task) string
-}
-
-const (
-	tidField allowedFields = iota
+	unknownField allowedField = iota
+	tidField
 	vTidField
 	pidField
 	vPidField
@@ -49,15 +34,22 @@ const (
 	maxField
 )
 
+type fieldInfo struct {
+	allowedNames []string
+	description  string
+	displayField func(t *task) string
+	stringField  func(t *task) string
+}
+
 var allowedFieldsSlice = [maxField]fieldInfo{
 	tidField: {
 		allowedNames: []string{"tid", "t"},
 		description:  "thread id (tid) of the current task (init namespace)",
 		displayField: func(t *task) string {
-			return fmt.Sprintf("t: %d, ", t.getTid())
+			return fmt.Sprintf("t: %d, ", t.GetTid())
 		},
 		stringField: func(t *task) string {
-			return fmt.Sprintf("%d", t.getTid())
+			return fmt.Sprintf("%d", t.GetTid())
 		},
 	},
 
@@ -164,10 +156,10 @@ var allowedFieldsSlice = [maxField]fieldInfo{
 		allowedNames: []string{"rptid", "rpt"},
 		description:  "real parent thread id (rptid) of the current task (init namespace)",
 		displayField: func(t *task) string {
-			return fmt.Sprintf("rpt: %d, ", t.getRealParentTid())
+			return fmt.Sprintf("rpt: %d, ", t.GetRealParentTid())
 		},
 		stringField: func(t *task) string {
-			return fmt.Sprintf("%d", t.getRealParentTid())
+			return fmt.Sprintf("%d", t.GetRealParentTid())
 		},
 	},
 
@@ -250,7 +242,7 @@ var allowedFieldsSlice = [maxField]fieldInfo{
 
 	cmdLineField: {
 		allowedNames: []string{"cmdline", "cmd"},
-		description:  "command line of the current task",
+		description:  "Command line of the current task",
 		displayField: func(t *task) string {
 			return fmt.Sprintf("cmd: %s, ", t.getCmdLine())
 		},
@@ -260,124 +252,43 @@ var allowedFieldsSlice = [maxField]fieldInfo{
 	},
 }
 
-var (
-	/* These are the emoji used in pretty print mode. */
-	imageError     emoji.Emoji = emoji.RedCircle
-	imageDownArrow emoji.Emoji = emoji.DownArrow
-	imageReaper    emoji.Emoji = emoji.Skull
-	imageNewspaper emoji.Emoji = emoji.RolledUpNewspaper
-	imageTree      emoji.Emoji = emoji.PalmTree
-	imageInfo      emoji.Emoji = emoji.Information
-	imageLineage   emoji.Emoji = emoji.Scroll
-
-	formatFields []string
-	mode         = undefined
-	displayGraph = func(a ...any) {
-		fmt.Println(a...)
-	}
-	displayError = func(a ...any) {
-		a = append([]any{imageError}, a...)
-		fmt.Println(a...)
-	}
-)
-
-func getFieldType(fieldName string) allowedFields {
+// this should be the unique method called to validate the field names
+func getFieldTypeFromName(fieldName string) allowedField {
 	for fieldType, fieldInfo := range &allowedFieldsSlice {
 		for _, allowedName := range fieldInfo.allowedNames {
 			if allowedName == fieldName {
-				return allowedFields(fieldType)
+				return allowedField(fieldType)
 			}
 		}
 	}
-	displayError(fmt.Sprintf("field '%s' is not allowed", fieldName))
-	os.Exit(1)
-	return maxField
+	return unknownField
 }
 
-func getFullFieldName(field string) string {
-	fieldType := getFieldType(field)
+func taskFieldDisplay(t *task, fieldType allowedField) string {
+	return allowedFieldsSlice[fieldType].displayField(t)
+}
+
+func taskFieldString(t *task, fieldType allowedField) string {
+	return allowedFieldsSlice[fieldType].stringField(t)
+}
+
+func getFullFieldName(fieldType allowedField) string {
 	return allowedFieldsSlice[fieldType].allowedNames[0]
 }
 
-func DisablePrettyPrint() {
-	imageError = "X"
-	imageDownArrow = "V"
-	imageReaper = "(R)"
-	imageNewspaper = "*"
-	imageTree = "-"
-	imageInfo = "-"
-	imageLineage = "-"
+func isUnknownField(fieldType allowedField) bool {
+	return fieldType == unknownField
 }
 
-func setRenderMode(m renderMode) {
-	/* We set the mode only if it is undefined
-	 * otherwise there is the risk we overwrite the formatMode previously set
-	 */
-	if mode == undefined {
-		mode = m
-	}
-}
-
-// SetFormatFields is called to instruct bpftree on which fields it has to print.
-// Moreover this method checks also if the provided fields are allowed or not.
-func SetFormatFields(fields []string) {
-	formatFields = fields
-	for _, field := range formatFields {
-		// if the field is not allowed `getFieldType` will log an error and terminate
-		getFieldType(field)
-	}
-	setRenderMode(formatMode)
-}
-
-func (t *task) String() string {
-	switch mode {
-	case lineageMode, infoMode:
-		return fmt.Sprintf("%s%v tid: %d, pid: %d, rptid: %d, rppid: %d",
-			t.renderComm(),
-			t.renderReaper(),
-			t.getTid(),
-			t.getPid(),
-			t.getRealParentTid(),
-			t.getRealParentPid())
-	case treeMode:
-		return fmt.Sprintf("%s%v tid: %d, pid: %d",
-			t.renderComm(),
-			t.renderReaper(),
-			t.getTid(),
-			t.getPid())
-	case formatMode:
-		finalLine := fmt.Sprintf("%s%v ", t.renderComm(), t.renderReaper())
-		for _, field := range formatFields {
-			finalLine += t.renderField(field)
+// RenderAllowedFields prints the allowed fields in a markdown table
+func RenderAllowedFields() {
+	render.DisplayGraph("| Fields | Description |")
+	render.DisplayGraph("| ------ | ----------- |")
+	for i, info := range &allowedFieldsSlice {
+		// We skip the first undefined field
+		if i == 0 {
+			continue
 		}
-		/* truncate final space + , */
-		finalLine = finalLine[:len(finalLine)-2]
-		return finalLine
-	default:
-		displayError(fmt.Sprintf("Unknown render mode: '%d'", mode))
-		os.Exit(1)
+		render.DisplayGraph("|", strings.Join(info.allowedNames, ","), "|", info.description, "|")
 	}
-
-	return ""
-}
-
-func (t *task) renderReaper() emoji.Emoji {
-	if t.isChildSubReaper() {
-		return imageReaper
-	}
-	/* if the task is not a child subreaper we don't add anything */
-	return ""
-}
-
-/* main thread is rendered with "[]" while secondary threads are rendered with "{}". */
-func (t *task) renderComm() string {
-	if t.isMainThread() {
-		return fmt.Sprintf("[%s]", t.getComm())
-	}
-	return fmt.Sprintf("{%s}", t.getComm())
-}
-
-func (t *task) renderField(field string) string {
-	fieldType := getFieldType(field)
-	return allowedFieldsSlice[int(fieldType)].displayField(t)
 }

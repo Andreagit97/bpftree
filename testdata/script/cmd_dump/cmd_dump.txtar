@@ -1,4 +1,0 @@
-# Dump a simple file
-exec bpftree dump capture.txt
-stdout '🗞️ Capture correctly dumped:'
-exists capture.txt
