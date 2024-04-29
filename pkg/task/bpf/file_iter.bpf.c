@@ -10,8 +10,10 @@ char _license[] SEC("license") = "GPL";
 
 struct exported_file_info
 {
-	uint32_t fd;
 	char file_path[FILE_PATH_MAX_LEN];
+	uint64_t ino;
+	uint32_t fd;
+	uint32_t pad;
 } typedef exported_file_info;
 
 exported_file_info data;
@@ -35,6 +37,7 @@ int dump_task_file(struct bpf_iter__task_file *ctx)
 	}
 
 	data.fd = ctx->fd;
+	data.ino = file->f_inode->i_ino;
 
 	if(bpf_core_enum_value_exists(enum bpf_func_id, BPF_FUNC_d_path) &&
 	   (bpf_core_enum_value(enum bpf_func_id, BPF_FUNC_d_path) == BPF_FUNC_d_path))
