@@ -201,9 +201,10 @@ func PopulateTaskInfo() error {
 // todo!: we need to rewrite this file descriptor collection
 type FileInfo struct {
 	/* These fields are mapped 1:1 to BPF side */
-	Path [1024]byte
-	Ino  uint64
-	Fd   uint32
+	Path      [1024]byte
+	Ino       uint64
+	Fd        uint32
+	Mountable uint32
 }
 
 func (f *FileInfo) getPath() string {
@@ -219,13 +220,12 @@ func (f *FileInfo) getPath() string {
 }
 
 func (f *FileInfo) print() string {
-	return fmt.Sprintf("(%d): path: %s, ino: %d", f.Fd, f.getPath(), f.Ino)
+	return fmt.Sprintf("(%d): path: %s, ino: %d, mount: %d", f.Fd, f.getPath(), f.Ino, f.Mountable)
 }
 
 // todo!: we just read in Little endian!
 func parseFileInfo(reader io.ReadCloser) (FileInfo, error) {
 	var f FileInfo
-	var pad uint32
 
 	/* Path */
 	if err := decodeByteEndianness(reader, 1024, &f.Path); err != nil {
@@ -242,8 +242,8 @@ func parseFileInfo(reader io.ReadCloser) (FileInfo, error) {
 		return f, err
 	}
 
-	/* Pad */
-	if err := decodeByteEndianness(reader, 4, &pad); err != nil {
+	/* Mountable */
+	if err := decodeByteEndianness(reader, 4, &f.Mountable); err != nil {
 		return f, err
 	}
 

@@ -13,12 +13,14 @@ struct exported_file_info
 	char file_path[FILE_PATH_MAX_LEN];
 	uint64_t ino;
 	uint32_t fd;
-	uint32_t pad;
+	uint32_t mountable;
 } typedef exported_file_info;
 
 exported_file_info data;
 
 volatile const int target_thread_id;
+
+#define MS_NOUSER 1 << 31
 
 SEC("iter/task_file")
 int dump_task_file(struct bpf_iter__task_file *ctx)
@@ -58,6 +60,18 @@ int dump_task_file(struct bpf_iter__task_file *ctx)
 		data.file_path[0] = 'N';
 		data.file_path[1] = 'A';
 		data.file_path[2] = '\0';
+	}
+
+	struct dentry *dentry = BPF_CORE_READ(file, f_path.dentry);
+	struct super_block *sb = BPF_CORE_READ(dentry, d_sb);
+	int flags = BPF_CORE_READ(sb, s_flags);
+	if(flags & MS_NOUSER)
+	{
+		data.mountable = 0;
+	}
+	else
+	{
+		data.mountable = 1;
 	}
 
 	bpf_seq_write(seq, &data, sizeof(data));
