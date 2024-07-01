@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
+	"fmt"
+	"os"
 
-	"github.com/Andreagit97/bpftree/pkg/task"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -12,7 +13,11 @@ var (
 		Aliases: []string{"f"},
 		Short:   "Shows all available fields",
 		Run: func(cmd *cobra.Command, args []string) {
-			task.RenderAllowedFields()
+			// todo!: this shouldn't stay in the render package
+			fmt.Println("not supported")
+			os.Exit(1)
+
+			// task.RenderAllowedFields()
 		},
 	}
 )

@@ -280,7 +280,7 @@ sudo go test ./... -count=1
    1. add the new field to `TaskInfo` struct
    2. add the code to parse it into `parseTaskInfo` method
    3. add a getter method for the new field in `task.go`
-   4. add an enum `allowedFields` for the new field
+   4. add an enum `allowedField` for the new field
    5. add a new entry for the field into `allowedFieldsSlice`
 - Tests
    1. add an entry in the `TestGetFieldMatrix` for the new getter method

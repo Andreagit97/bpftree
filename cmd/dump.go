@@ -1,11 +1,10 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
-
-	"github.com/Andreagit97/bpftree/pkg/task"
 )
 
 var (
@@ -19,9 +18,13 @@ This file can then be read by bpftree using the '--capture' flag`,
 		Example: `  - bpftree dump outfile.tree -> dump tasks into outfile.tree`,
 		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := task.DumpTasksIntoFile(args[0]); err != nil {
-				os.Exit(1)
-			}
+			// todo!: implement this function
+			fmt.Println("not supported")
+			os.Exit(1)
+
+			// if err := dumpTasksIntoFile(args[0]); err != nil {
+			// 	os.Exit(1)
+			// }
 		},
 	}
 )
