@@ -1,5 +1,4 @@
-🌴 bpftree
-===
+# 🌴 bpftree
 
 ## 🗞️ Why bpftree?
 
@@ -19,7 +18,7 @@ Here we are asking `bpftree` to print the lineage for all processes with `comm==
 In this example, we have only one `tail` process in our system:
 
 ```plain
-📜 Task Lineage for comm: tail
+📜 Task Lineage for 'comm=tail'
 ⬇️ [tail] tid: 24996, pid: 24996, rptid: 24776, rppid: 24776
 ⬇️ [zsh] tid: 24776, pid: 24776, rptid: 24755, rppid: 24755
 ⬇️ [gnome-terminal-] tid: 24755, pid: 24755, rptid: 1297, rppid: 1297
@@ -55,6 +54,8 @@ sudo bpftree fields
 # or short form
 sudo bpftree f
 ```
+
+> __Please note__: if you run bpftree inside a container you will see only the processes inside the current pid namespace.
 
 ## ⛓️ Requirements
 
@@ -236,11 +237,13 @@ sudo bpftree info tid 1 --capture output-file.tree
 
 On the capture file, you can use all commands listed above like in a live run.
 
+The capture files follow the versioning of the bpftree tool. This means that a particular version of bpftree can read only capture files with the same Major and Minor and with a lower or equal Patch. If needed we could create a wrapper tool that calls the right bpftree version for the provided capture file.
+
 ## For developers
 
 ### 🏗️ Build from source
 
-As many go project you have just to type a bunch of commands in the root folder of the project:
+As with many go project you have just to type a bunch of commands in the root folder of the project:
 
 ```bash
 go generate ./...
@@ -268,19 +271,32 @@ sudo ./bpftree t t 1
 In the root folder of the project run:
 
 ```bash
-sudo go test ./... -count=1
+# Unit tests
+sudo go test ./pkg/...
+
+# All tests
+sudo -E env "PATH=$PATH" go test ./... -count=1
 ```
+
+### Run linters
+
+To run golangci-lint
+
+```bash
+golangci-lint run  --timeout=900s
+```
+
+> __Note__: be sure that the used golangci-lint version is compatible with your go version. Tested with `golangci-lint 1.59.1 built with go1.22.3` and `go1.22.1`
 
 ### ➕ Add a new field
 
 - BPF side
-   1. add the new field to `exported_task_info` struct
+   1. add the new field to `exported_task_info` or `exported_file_info` struct
    2. instrument the code to collect the new field
 - Userspace side
-   1. add the new field to `TaskInfo` struct
-   2. add the code to parse it into `parseTaskInfo` method
+   1. add the new field to `taskInfo` or `fileInfo` struct
    3. add a getter method for the new field in `task.go`
-   4. add an enum `allowedFields` for the new field
+   4. add an enum `allowedField` for the new field
    5. add a new entry for the field into `allowedFieldsSlice`
 - Tests
    1. add an entry in the `TestGetFieldMatrix` for the new getter method

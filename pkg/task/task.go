@@ -4,6 +4,10 @@ import (
 	"bytes"
 	"fmt"
 	"os/user"
+
+	"github.com/Andreagit97/bpftree/pkg/render"
+	"github.com/enescakir/emoji"
+	"github.com/shivamMg/ppds/tree"
 )
 
 var (
@@ -11,14 +15,20 @@ var (
 )
 
 type task struct {
-	Info     TaskInfo
-	children []*task
+	Info         *taskInfo
+	TaskChildren []*task
+	Files        []*fileInfo
 }
 
 func (t *task) isMainThread() bool {
 	return t.Info.Pid == t.Info.Tid
 }
 
+func (t *task) isChildSubReaper() bool {
+	return t.Info.IsChildSubreaper != 0
+}
+
+// Getters
 func (t *task) getComm() string {
 	/* We truncate the comm after the \0 to avoid printing
 	 * useless end characters
@@ -31,8 +41,12 @@ func (t *task) getComm() string {
 	return string(t.Info.Comm[:index])
 }
 
-func (t *task) isChildSubReaper() bool {
-	return t.Info.IsChildSubreaper != 0
+// The main thread is rendered with "[]" while secondary threads are rendered with "{}".
+func (t *task) getFormattedComm() string {
+	if t.isMainThread() {
+		return fmt.Sprintf("[%s]", t.getComm())
+	}
+	return fmt.Sprintf("{%s}", t.getComm())
 }
 
 func (t *task) getParentTid() int {
@@ -43,7 +57,7 @@ func (t *task) getParentPid() int {
 	return int(t.Info.ParentPid)
 }
 
-func (t *task) getRealParentTid() int {
+func (t *task) GetRealParentTid() int {
 	return int(t.Info.RealParentTid)
 }
 
@@ -51,16 +65,12 @@ func (t *task) getRealParentPid() int {
 	return int(t.Info.RealParentPid)
 }
 
-func (t *task) getTid() int {
+func (t *task) GetTid() int {
 	return int(t.Info.Tid)
 }
 
 func (t *task) getPid() int {
 	return int(t.Info.Pid)
-}
-
-func (t *task) getChildren() []*task {
-	return t.children
 }
 
 func (t *task) getNsLevel() int {
@@ -72,7 +82,18 @@ func (t *task) getVTid() int {
 }
 
 func (t *task) getVPid() int {
-	return int(t.Info.VPid)
+	// We use our user space table for 2 reasons:
+	// - access virtual pids in the kernel could become tricky
+	// - we don't want to send extra fields in the kernel since we can recover the virtual tids in userspace.
+	if t.isMainThread() {
+		return int(t.Info.VTid)
+	}
+
+	groupLeader := getTaskFromTid(int(t.Info.Pid))
+	if groupLeader == nil {
+		return int(-1)
+	}
+	return int(groupLeader.Info.VTid)
 }
 
 func (t *task) getPgid() int {
@@ -80,7 +101,11 @@ func (t *task) getPgid() int {
 }
 
 func (t *task) getVPgid() int {
-	return int(t.Info.VPgid)
+	groupLeader := getTaskFromTid(int(t.Info.Pgid))
+	if groupLeader == nil {
+		return int(-1)
+	}
+	return int(groupLeader.Info.VTid)
 }
 
 func (t *task) getSid() int {
@@ -88,7 +113,11 @@ func (t *task) getSid() int {
 }
 
 func (t *task) getVSid() int {
-	return int(t.Info.VSid)
+	groupLeader := getTaskFromTid(int(t.Info.Sid))
+	if groupLeader == nil {
+		return int(-1)
+	}
+	return int(groupLeader.Info.VTid)
 }
 
 func (t *task) getExePath() string {
@@ -111,45 +140,32 @@ func (t *task) getEUID() int64 {
 	return t.Info.EUID
 }
 
-func (t *task) getLoginUIDName() string {
-	/* Search the username first in the map and then in the system */
-	if t.Info.LoginUID < 0 {
+func searchUser(uid int64) string {
+	if uid < 0 {
 		return ""
 	}
 
-	loginUIDString := fmt.Sprintf("%d", t.Info.LoginUID)
-	if username, ok := userList[loginUIDString]; ok {
+	// Search the username first in the map and then in the system
+	UIDString := fmt.Sprintf("%d", uid)
+	if username, ok := userList[UIDString]; ok {
 		return username
 	}
 
-	u, err := user.LookupId(loginUIDString)
+	u, err := user.LookupId(UIDString)
 	if err == nil {
-		userList[loginUIDString] = u.Username
+		userList[UIDString] = u.Username
 		return u.Username
 	}
 
 	return ""
 }
 
+func (t *task) getLoginUIDName() string {
+	return searchUser(t.Info.LoginUID)
+}
+
 func (t *task) getEUIDName() string {
-	/* Search the username first in the map and then in the system */
-	if t.Info.EUID < 0 {
-		return ""
-	}
-
-	eUIDString := fmt.Sprintf("%d", t.Info.EUID)
-
-	if username, ok := userList[eUIDString]; ok {
-		return username
-	}
-
-	u, err := user.LookupId(eUIDString)
-	if err == nil {
-		userList[eUIDString] = u.Username
-		return u.Username
-	}
-
-	return ""
+	return searchUser(t.Info.EUID)
 }
 
 // todo!: this is simple scratch implementation it doesn't cover all the cases.
@@ -161,6 +177,27 @@ func (t *task) getCmdLine() string {
 	singleArgs := bytes.Split(fullCmdLine[0], []byte{0})
 	joinedArgs := bytes.Join(singleArgs, []byte(","))
 	return string(joinedArgs)
+}
+
+// Here we implement tree.Node interface with `Children` and `Data` methods
+func (t *task) Children() []tree.Node {
+	var treeNodes []tree.Node
+	for _, child := range t.TaskChildren {
+		treeNodes = append(treeNodes, tree.Node(child))
+	}
+	return treeNodes
+}
+
+func (t *task) Data() interface{} {
+	return t.String()
+}
+
+func (t *task) getReaperImage() emoji.Emoji {
+	if t.isChildSubReaper() {
+		return render.GetImageReaper()
+	}
+	/* if the task is not a child subreaper we don't add anything */
+	return ""
 }
 
 func init() {

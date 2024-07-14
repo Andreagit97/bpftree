@@ -1,4 +1,4 @@
-## Supported fields
+# Supported fields
 
 | Fields      | Description                                                         |
 | ----------- | ------------------------------------------------------------------- |

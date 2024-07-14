@@ -20,13 +20,6 @@ func TestInfoCmd(t *testing.T) {
 	})
 }
 
-func TestDumpCmd(t *testing.T) {
-	testscript.Run(t, testscript.Params{
-		Dir:         "testdata/script/cmd_dump",
-		WorkdirRoot: "testdata/output",
-	})
-}
-
 func TestLineageCmd(t *testing.T) {
 	testscript.Run(t, testscript.Params{
 		Dir:         "testdata/script/cmd_lineage",
@@ -48,16 +41,16 @@ func TestFieldsCmd(t *testing.T) {
 	})
 }
 
-func TestCaptureCmd(t *testing.T) {
+func TestDumpCmd(t *testing.T) {
 	testscript.Run(t, testscript.Params{
-		Dir:         "testdata/script/capture",
+		Dir:         "testdata/script/cmd_dump",
 		WorkdirRoot: "testdata/output",
 	})
 }
 
 func TestFields(t *testing.T) {
 	testscript.Run(t, testscript.Params{
-		Dir:         "testdata/script/fields",
+		Dir:         "testdata/script/supported_fields",
 		WorkdirRoot: "testdata/output",
 	})
 }

@@ -1,23 +1,23 @@
 # Get tid 1 lineage
 exec bpftree t tid 1
-stdout '🌴 Task Tree for tid: 1'
+stdout '🌴 Task Tree for ''tid=1'''
 
 # Get tid 1 lineage without pretty print
 exec bpftree t tid 1 -n
-stdout '- Task Tree for tid: 1'
+stdout '- Task Tree for ''tid=1'''
 
 # Get systemd throught prefix
 exec bpftree t c systemd
-stdout '🌴 Task Tree for comm: systemd'
+stdout '🌴 Task Tree for ''comm=systemd'''
 
 # Get systemd throught prefix without pretty print
 exec bpftree t c systemd -n
-stdout '- Task Tree for comm: system'
+stdout '- Task Tree for ''comm=systemd'''
 
 # Get unexistent tid '9999999999999'
 ! exec bpftree t tid 9999999999999 -n
-stdout 'X There are no tasks with tid equals to ''9999999999999'' in the system'
+stdout 'X There are no tasks with ''tid=9999999999999'' in the system'
 
 # Get unexistent prefix 'ccsdnsndsn'
 ! exec bpftree t c ccsdnsnds
-stdout '🔴 There are no tasks with comm equals to ''ccsdnsnds'' in the system'
+stdout '🔴 There are no tasks with ''comm=ccsdnsnds'' in the system'

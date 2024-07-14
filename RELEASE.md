@@ -1,5 +1,11 @@
 # Release
 
+## Versioning
+
+- Bump a `MAJOR` (TBD).
+- Bump a `MINOR` when you add at least one new field. In this way, old capture files become incompatible since we now support new fields.
+- Bump a `PATCH` when you just need a fix inside the tool. For example a verifier issue or a bug in the userspace side.
+
 ## Release steps
 
 1. update supported fields in the README.md with `bpftree -f` output

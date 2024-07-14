@@ -1,0 +1,12 @@
+# Dump a file
+exec bpftree dump capture.tree
+stdout '🗞️ Capture correctly dumped:'
+exists capture.tree
+
+# Try to read the file just dumped
+exec bpftree i t 1 -c capture.tree
+cmp stdout dump/systemd.txt
+
+-- dump/systemd.txt --
+ℹ️ Task Info for 'tid=1'
+🗞️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0

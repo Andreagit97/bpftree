@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-
 	"github.com/Andreagit97/bpftree/pkg/task"
+	"github.com/spf13/cobra"
 )
 
 var (

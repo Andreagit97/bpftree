@@ -1,0 +1,16 @@
+name: "Setup Environment"
+description: "Installs dependencies and go code"
+runs:
+  using: "composite"
+  steps:
+    - name: Install deps
+      shell: bash
+      run: |
+        sudo apt update -y
+        sudo apt install -y --no-install-recommends build-essential git clang llvm libelf-dev libbpf-dev
+
+    - name: Setup Go
+      uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
+      with:
+        go-version-file: "go.mod"
+        check-latest: true

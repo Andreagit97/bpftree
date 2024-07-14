@@ -8,11 +8,11 @@ cmp stdout info/systemd_no_pretty.txt
 
 # Get systemd throught prefix
 exec bpftree i comm systemd
-stdout 'ℹ️ Task Info for comm: systemd'
+stdout 'ℹ️ Task Info for ''comm=systemd'''
 
 # Get systemd throught prefix without pretty print
 exec bpftree i comm systemd -n
-stdout '- Task Info for comm: systemd'
+stdout '- Task Info for ''comm=systemd'''
 
 # Get tid 1 info with custom format
 exec bpftree i t 1 -f 'tid,pid,reaper,rpt,c'
@@ -21,24 +21,23 @@ cmp stdout info/custom_format.txt
 # Get tid 1 info with custom format without pretty print
 exec bpftree i t 1 -f 'tid,pid,reaper,rpt,c' -n
 cmp stdout info/custom_format_no_pretty.txt
-
 # Get unexistent tid '9999999999999'
 ! exec bpftree i t 9999999999999 -f 'tid,pid,reaper,rpt,c' -n
-stdout 'X There are no tasks with tid equals to ''9999999999999'' in the system'
+stdout 'X There are no tasks with ''tid=9999999999999'' in the system'
 
 # Get unexistent prefix 'ccsdnsndsn'
 ! exec bpftree i c ccsdnsnds -f 'tid,pid,reaper,rpt,c'
-stdout '🔴 There are no tasks with comm equals to ''ccsdnsnds'' in the system'
+stdout '🔴 There are no tasks with ''comm=ccsdnsnds'' in the system'
 
 -- info/systemd.txt --
-ℹ️ Task Info for tid: 1
+ℹ️ Task Info for 'tid=1'
 🗞️ [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
 -- info/systemd_no_pretty.txt --
-- Task Info for tid: 1
+- Task Info for 'tid=1'
 * [systemd] tid: 1, pid: 1, rptid: 0, rppid: 0
 -- info/custom_format.txt --
-ℹ️ Task Info for tid: 1
+ℹ️ Task Info for 'tid=1'
 🗞️ [systemd] t: 1, p: 1, r: false, rpt: 0, c: systemd
 -- info/custom_format_no_pretty.txt --
-- Task Info for tid: 1
+- Task Info for 'tid=1'
 * [systemd] t: 1, p: 1, r: false, rpt: 0, c: systemd

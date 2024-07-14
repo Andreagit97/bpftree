@@ -1,2 +1,2 @@
 # Exclude vmlinux from github stats
-pkg/task/bpf/vmlinux.h linguist-vendored
+pkg/iterators/bpf/vmlinux.h linguist-vendored

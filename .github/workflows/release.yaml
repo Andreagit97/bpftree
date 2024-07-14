@@ -3,41 +3,28 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build-all-archs:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       contents: write # To add assets to a release.
     steps:
-      - name: Install deps
-        run: |
-          sudo apt update -y
-          sudo apt install -y --no-install-recommends build-essential git clang llvm libelf-dev
-          git clone https://github.com/libbpf/libbpf.git --branch v1.2.0 --single-branch
-          pushd libbpf/src
-          sudo make install
-          popd
-          sudo rm -rf ./libbpf
-
-      - name: Checkout
-        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # v3.5.0
+      - name: Checkout commit
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
         with:
           fetch-depth: 0
+
+      - name: Setup Environment
+        uses: ./.github/actions/setup-env
 
       - name: Fetch all tags
         run: git fetch --force --tags
 
-      - name: Setup Go
-        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
-        with:
-          go-version: '1.20'
-          check-latest: true
-
       - name: Run GoReleaser
         id: run-goreleaser
-        uses: goreleaser/goreleaser-action@f82d6c1c344bcacabba2c841718984797f664a6b # v4.2.0
+        uses: goreleaser/goreleaser-action@5742e2a039330cbb23ebf35f046f814d4c6ff811 # v5.1.0
         with:
           distribution: goreleaser
           version: latest

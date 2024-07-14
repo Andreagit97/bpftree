@@ -3,9 +3,9 @@ package cmd
 import (
 	"os"
 
-	"github.com/spf13/cobra"
-
+	"github.com/Andreagit97/bpftree/pkg/render"
 	"github.com/Andreagit97/bpftree/pkg/task"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -19,7 +19,8 @@ This file can then be read by bpftree using the '--capture' flag`,
 		Example: `  - bpftree dump outfile.tree -> dump tasks into outfile.tree`,
 		Args:    cobra.ExactArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := task.DumpTasksIntoFile(args[0]); err != nil {
+			if err := task.DumpToFile(args[0]); err != nil {
+				render.DisplayError(err)
 				os.Exit(1)
 			}
 		},

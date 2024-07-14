@@ -1,11 +1,8 @@
 package cmd
 
 import (
-	"os"
-
-	"github.com/spf13/cobra"
-
 	"github.com/Andreagit97/bpftree/pkg/task"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -24,11 +21,7 @@ You can customize this format using the '--format' flag`,
   - bpftree tree comm systemd -f 't,p,r' -> print formatted tasks with comm=systemd`,
 		Args: cobra.ExactArgs(2),
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := task.PopulateTaskInfo(); err != nil {
-				os.Exit(1)
-			}
-
-			task.PrintTasksTree(args[0], args[1])
+			task.TasksTree(args[0], args[1])
 		},
 	}
 )
