@@ -8,12 +8,14 @@
 
 ## Release steps
 
-1. update supported fields in the README.md with `bpftree -f` output
-2. update `release_changelog.md` file with `bpftree -f` output
-3. bump `bpftree` version in the code
-4. push a new tag
+1. update supported fields in the README.md with `bpftree f` output
+2. update `release_changelog.md` file with `bpftree f` output
+3. bump `bpftree` version in the code `toolVersion`
+4. push a new tag (see next step)
 
 ## Push a tag
+
+On the main branch
 
 ```bash
 git tag v0.0.1

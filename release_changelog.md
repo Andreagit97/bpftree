@@ -18,3 +18,6 @@
 | reaper,r    | true if the current process is a child_sub_reaper                   |
 | ns_level,ns | pid namespace level of the actual thread                            |
 | exepath,e   | full executable path of the current task                            |
+| loginuid,lu | UID of the user that interacted with a login service                |
+| euid,eu     | Effective UID                                                       |
+| cmdline,cmd | Command line of the current task                                    |

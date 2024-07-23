@@ -89,6 +89,9 @@ Right now the unique BPF requirement is the presence of BPF iterators in the run
 | reaper,r    | true if the current process is a child_sub_reaper                   |
 | ns_level,ns | pid namespace level of the actual thread                            |
 | exepath,e   | full executable path of the current task                            |
+| loginuid,lu | UID of the user that interacted with a login service                |
+| euid,eu     | Effective UID                                                       |
+| cmdline,cmd | Command line of the current task                                    |
 
 In the `Fields` column, we have the full field name as a first string and its short name as a second one (e.g. "`tid,t`", `tid` is the full name while `t` is the short one).
 
@@ -224,6 +227,17 @@ sudo bpftree fields
 sudo bpftree f
 ```
 
+### 📂 files
+
+This command shows all the file descriptors for all tasks that match a certain condition.
+
+```bash
+# show all fds of the thread with tid=1
+sudo ./bpftree files tid 1
+# or short form
+sudo ./bpftree fds t 1
+```
+
 ### 🔻 dump
 
 This command allows you to save read system tasks into a file. Let's imagine you are using an enterprise tool and you find a bug with a specific system configuration. You could dump a capture file and send it to the support team to analyze it. Thanks to the `--capture` flag `bpftree` can replay previously dumped files coming also from systems with different architectures.
@@ -293,12 +307,14 @@ golangci-lint run  --timeout=900s
 - BPF side
    1. add the new field to `exported_task_info` or `exported_file_info` struct
    2. instrument the code to collect the new field
-- Userspace side
-   1. add the new field to `taskInfo` or `fileInfo` struct
-   3. add a getter method for the new field in `task.go`
-   4. add an enum `allowedField` for the new field
-   5. add a new entry for the field into `allowedFieldsSlice`
-- Tests
-   1. add an entry in the `TestGetFieldMatrix` for the new getter method
-   2. update `testdata/script/cmd_fields/cmd_fields.txtar` file with the new output of `sudo ./bpftree f`
-   3. update `testdata/script/fields/systemd_fields.txtar` tests with the new field
+- Userspace side for `taskInfo`
+   1. add the new field to `taskInfo` struct
+   2. add a getter method for the new field in `task.go`
+   3. add an enum `allowedField` for the new field
+   4. add a new entry for the field into `allowedFieldsSlice`
+   5. add an entry in the `TestGetFieldMatrix` for the new getter method
+   6. update `testdata/script/cmd_fields/cmd_fields.txtar` file with the new output of `sudo ./bpftree f`
+   7. update `testdata/script/fields/systemd_fields.txtar` tests with the new field
+- Userspace side for `fileInfo`
+   1. add the new field to `fileInfo` struct
+   2. add the new field into the output of the `String()` method
