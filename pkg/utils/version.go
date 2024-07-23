@@ -15,7 +15,7 @@ type Version struct {
 
 var toolVersion = Version{
 	Major: 0,
-	Minor: 2,
+	Minor: 1,
 	Patch: 0,
 }
 
